@@ -26,9 +26,6 @@ move_camera_by = AU/30
 time_setting = 0
 draw_dist_line = True
 draw_names = True
-on_click_x =  on_click_y = 0
-click_count = 0
-clicks = []
 spawned_object_count = 0
 
 
@@ -142,17 +139,18 @@ class Planet:
 
 sun = Planet("sun",0,0,sun_radius,sun_mass,WHITE,0)
 sun.is_sun = True
-earth = Planet("earth",AU,0,earth_radius,earth_mass,BLUE,29.783*1000)
-mars = Planet("mars",1.524 * AU,0,mars_radius,mars_mass,RED,24.077*1000)
-venus = Planet("venus",0.723 * AU,0,venus_radius,venus_mass,ORANGE,35.02*1000)
 mercury = Planet("mercury",0.387 * AU, 0, mercury_radius, mercury_mass,GREY,47.4 * 1000)
+earth = Planet("earth",AU,0,earth_radius,earth_mass,BLUE,29.783*1000)
+venus = Planet("venus",0.723 * AU,0,venus_radius,venus_mass,ORANGE,35.02*1000)
+mars = Planet("mars",1.524 * AU,0,mars_radius,mars_mass,RED,24.077*1000)
 jupiter = Planet("jupiter",5.2*AU,0, jupiter_radius, jupiter_mass, ORANGE,13.72*1000)
 saturn = Planet("saturn",9.5*AU,0, saturn_radius, saturn_mass, GREY,9.69*1000)
-neptune = Planet("neptune",30.1*AU,0,neptune_radius, neptune_mass, BLUE,5.43*1000)
 uranus = Planet("uranus",19.2*AU,0, uranus_radius, uranus_mass, WHITE, 6.71*1000)
+neptune = Planet("neptune",30.1*AU,0,neptune_radius, neptune_mass, BLUE,5.43*1000)
+
 mouse_pos_scale = 1
 
-bodies = [sun, earth, mars, venus, mercury, jupiter,saturn,uranus,neptune]
+bodies = [sun,mercury,venus,earth,mars,jupiter,saturn,uranus,neptune]
 
 def scatter_stars():
     coords = []
@@ -173,7 +171,7 @@ def draw_timestep():
     pygame.draw.rect(window,DARK_GREY,pygame.Rect(WIDTH-80, 0, WIDTH,20), 2,3)
     timestep = FONT.render(f"Timestep: {time_setting}", 2, WHITE,)
     window.blit(timestep,(WIDTH-78,0))
-    
+
 while running:
     clock.tick(FPS)
     keys = pygame.key.get_pressed()
@@ -197,6 +195,10 @@ while running:
             for point in body.orbit:
                 point[0] += move_camera_by
             body.x += move_camera_by
+    if keys[pygame.K_x]:
+        x,y = pygame.mouse.get_pos()
+        x,y =((x-WIDTH/2)/250)*AU*mouse_pos_scale, ((y-HEIGHT/2)/250)*AU*mouse_pos_scale
+        bodies.append(Planet("",x,y,randint(5,20), randint(2*10**23, 3*10**24),(randint(0,255),randint(0,255),randint(0,255)), randint(8000,15000)))
     window.fill((0,0,0))
     draw_stars(scattered_coords)
     for body in bodies:
@@ -222,12 +224,10 @@ while running:
                 if time_setting < 10:
                     time *= 1.25
                     time_setting += 1
-                    print(time_setting)
             if event.key == pygame.K_DOWN:
                 if time_setting > -10:
                     time /= 1.25
                     time_setting -= 1
-                    print(time_setting)
             if event.key == pygame.K_o:
                 draw_dist_line = not draw_dist_line
             if event.key == pygame.K_n:
@@ -238,9 +238,6 @@ while running:
                 time_setting = 0
                 draw_dist_line = True
                 draw_names = True
-                on_click_x =  on_click_y = 0
-                click_count = 0
-                clicks = []
                 spawned_object_count = 0
                 paused = False
                 time = 3600*24
