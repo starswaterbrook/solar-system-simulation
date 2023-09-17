@@ -116,6 +116,8 @@ class Planet:
         distance = math.sqrt(math.pow((self.x-other.x),2)+math.pow((self.y-other.y),2))
         if other.is_sun:
             self.distance_to_sun = distance
+        if self.distance_to_sun < sun.radius and not self.is_sun:
+            bodies.remove(self)
         force = G*self.mass*other.mass / distance**2
         angle = math.atan2((other.y-self.y), (other.x-self.x))
         force_x = math.cos(angle)*force
@@ -170,10 +172,9 @@ def draw_timestep():
     pygame.draw.rect(window,LIGHT_GREY,pygame.Rect(WIDTH-88, 0, WIDTH,20), 0,3)
     pygame.draw.rect(window,DARK_GREY,pygame.Rect(WIDTH-88, 0, WIDTH,20), 2,3)
     timestep = FONT.render(f"Timestep: {time_setting}", 2, WHITE,)
-    window.blit(timestep,(WIDTH-85,0))
+    window.blit(timestep,(WIDTH-84,0))
 
-while running:
-    clock.tick(FPS)
+def handle_inputs():
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
         for body in bodies:
@@ -199,6 +200,10 @@ while running:
         x,y = pygame.mouse.get_pos()
         x,y =((x-WIDTH/2)/250)*AU*mouse_pos_scale, ((y-HEIGHT/2)/250)*AU*mouse_pos_scale
         bodies.append(Planet("",x,y,randint(5,20), randint(2*10**23, 3*10**24),(randint(0,255),randint(0,255),randint(0,255)), randint(8000,15000)))
+
+while running:
+    clock.tick(FPS)
+    handle_inputs()
     window.fill((0,0,0))
     draw_stars(scattered_coords)
     for body in bodies:
