@@ -172,7 +172,7 @@ def draw_timestep():
     pygame.draw.rect(window,LIGHT_GREY,pygame.Rect(WIDTH-88, 0, WIDTH,20), 0,3)
     pygame.draw.rect(window,DARK_GREY,pygame.Rect(WIDTH-88, 0, WIDTH,20), 2,3)
     timestep = FONT.render(f"Timestep: {time_setting}", 2, WHITE,)
-    window.blit(timestep,(WIDTH-85,0))
+    window.blit(timestep,(WIDTH-84,0))
 
 def handle_inputs():
     keys = pygame.key.get_pressed()
