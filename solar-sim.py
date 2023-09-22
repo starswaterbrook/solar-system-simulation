@@ -53,10 +53,8 @@ neptune_radius, neptune_mass = 12, 1.024 * 10**26
 uranus_radius, uranus_mass = 12, 8.6 * 10**25
 
 class Planet:
-    def __init__(self,name,x,y,r,mass,color,vel_y):
-        self.name = "Spawned Object"
-        if len(name) != 0:
-            self.name = name
+    def __init__(self,x,y,r,mass,color,vel_y,name="Spawned Object"):
+        self.name = name
         self.x = x
         self.y = y
         self.radius = r
@@ -83,7 +81,7 @@ class Planet:
             window.blit(name, (x,y))
         if len(self.orbit) > 2:
             corrected_points = []
-            orbit_points_limit = 400 #200*(self.x/AU) #DO ZMIANY
+            orbit_points_limit = 400
             if len(self.orbit) > orbit_points_limit and not paused:
                 self.orbit.pop(0)
             for point in self.orbit:
@@ -118,7 +116,10 @@ class Planet:
             self.distance_to_sun = distance
         if self.distance_to_sun < sun.radius and not self.is_sun:
             bodies.remove(self)
-        force = G*self.mass*other.mass / distance**2
+        if distance != 0:
+            force = G*self.mass*other.mass / distance**2
+        else:
+            force = G*self.mass*other.mass
         angle = math.atan2((other.y-self.y), (other.x-self.x))
         force_x = math.cos(angle)*force
         force_y = math.sin(angle)*force
@@ -139,16 +140,16 @@ class Planet:
         self.y += self.vel_y * time
         self.orbit.append([self.x,self.y])
 
-sun = Planet("sun",0,0,sun_radius,sun_mass,WHITE,0)
+sun = Planet(0,0,sun_radius,sun_mass,WHITE,0,"sun")
 sun.is_sun = True
-mercury = Planet("mercury",0.387 * AU, 0, mercury_radius, mercury_mass,GREY,47.4 * 1000)
-earth = Planet("earth",AU,0,earth_radius,earth_mass,BLUE,29.783*1000)
-venus = Planet("venus",0.723 * AU,0,venus_radius,venus_mass,ORANGE,35.02*1000)
-mars = Planet("mars",1.524 * AU,0,mars_radius,mars_mass,RED,24.077*1000)
-jupiter = Planet("jupiter",5.2*AU,0, jupiter_radius, jupiter_mass, ORANGE,13.72*1000)
-saturn = Planet("saturn",9.5*AU,0, saturn_radius, saturn_mass, GREY,9.69*1000)
-uranus = Planet("uranus",19.2*AU,0, uranus_radius, uranus_mass, WHITE, 6.71*1000)
-neptune = Planet("neptune",30.1*AU,0,neptune_radius, neptune_mass, BLUE,5.43*1000)
+mercury = Planet(0.387 * AU, 0, mercury_radius, mercury_mass,GREY,47.4 * 1000,"mercury")
+earth = Planet(AU,0,earth_radius,earth_mass,BLUE,29.783*1000,"earth")
+venus = Planet(0.723 * AU,0,venus_radius,venus_mass,ORANGE,35.02*1000,"venus")
+mars = Planet(1.524 * AU,0,mars_radius,mars_mass,RED,24.077*1000,"mars")
+jupiter = Planet(5.2*AU,0, jupiter_radius, jupiter_mass, ORANGE,13.72*1000,"jupiter")
+saturn = Planet(9.5*AU,0, saturn_radius, saturn_mass, GREY,9.69*1000,"saturn")
+uranus = Planet(19.2*AU,0, uranus_radius, uranus_mass, WHITE, 6.71*1000,"uranus")
+neptune = Planet(30.1*AU,0,neptune_radius, neptune_mass, BLUE,5.43*1000,"neptune")
 
 mouse_pos_scale = 1
 
@@ -174,7 +175,25 @@ def draw_timestep():
     timestep = FONT.render(f"Timestep: {time_setting}", 2, WHITE,)
     window.blit(timestep,(WIDTH-84,0))
 
-def handle_inputs():
+def draw_help():
+    pause = FONT.render(f"Space - Pause",1,WHITE)
+    timewarp = FONT.render("Up/Down - Time-warp",1,WHITE)
+    drawdist = FONT.render("O - Draw distance lines",1,WHITE)
+    drawnames = FONT.render("N - Draw names of planets",1,WHITE)
+    reset = FONT.render("R - Reset",1,WHITE)
+    spawn = FONT.render("X - Spawn new object on cursor",1,WHITE)
+    strs = [pause, timewarp, drawdist,drawnames,reset,spawn]
+    menu_height = 20*len(strs)
+    x_pos = WIDTH//2 - menu_height//2
+    y_pos = 0
+    pygame.draw.rect(window,LIGHT_GREY,pygame.Rect(x_pos-3, y_pos, 200,menu_height), 0,3)
+    pygame.draw.rect(window,DARK_GREY,pygame.Rect(x_pos-3, y_pos, 200,menu_height), 2,3)
+    for s in strs:
+        window.blit(s, (x_pos, y_pos))
+        y_pos += 20
+    y_pos = 0
+
+def handle_camera():
     keys = pygame.key.get_pressed()
     if keys[pygame.K_w]:
         for body in bodies:
@@ -196,14 +215,12 @@ def handle_inputs():
             for point in body.orbit:
                 point[0] += move_camera_by
             body.x += move_camera_by
-    if keys[pygame.K_x]:
-        x,y = pygame.mouse.get_pos()
-        x,y =((x-WIDTH/2)/250)*AU*mouse_pos_scale, ((y-HEIGHT/2)/250)*AU*mouse_pos_scale
-        bodies.append(Planet("",x,y,randint(5,20), randint(2*10**23, 3*10**24),(randint(0,255),randint(0,255),randint(0,255)), randint(8000,15000)))
+
+show_help = False
 
 while running:
     clock.tick(FPS)
-    handle_inputs()
+    handle_camera()
     window.fill((0,0,0))
     draw_stars(scattered_coords)
     for body in bodies:
@@ -218,6 +235,8 @@ while running:
         if body.is_selected:
             body.draw_menu()
     draw_timestep()
+    if show_help:
+        draw_help()
     pygame.display.update()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -237,6 +256,8 @@ while running:
                 draw_dist_line = not draw_dist_line
             if event.key == pygame.K_n:
                 draw_names = not draw_names
+            if event.key == pygame.K_h:
+                show_help = not show_help
             if event.key == pygame.K_r:
                 scale = SCALE_ORIGINAL
                 move_camera_by = AU/30
@@ -246,16 +267,16 @@ while running:
                 spawned_object_count = 0
                 paused = False
                 time = 3600*24
-                sun = Planet("sun",0,0,sun_radius,sun_mass,WHITE,0)
+                sun = Planet(0,0,sun_radius,sun_mass,WHITE,0,"sun")
                 sun.is_sun = True
-                earth = Planet("earth",AU,0,earth_radius,earth_mass,BLUE,29.783*1000)
-                mars = Planet("mars",1.524 * AU,0,mars_radius,mars_mass,RED,24.077*1000)
-                venus = Planet("venus",0.723 * AU,0,venus_radius,venus_mass,ORANGE,35.02*1000)
-                mercury = Planet("mercury",0.387 * AU, 0, mercury_radius, mercury_mass,GREY,47.4 * 1000)
-                jupiter = Planet("jupiter",5.2*AU,0, jupiter_radius, jupiter_mass, ORANGE,13.72*1000)
-                saturn = Planet("saturn",9.5*AU,0, saturn_radius, saturn_mass, GREY,9.69*1000)
-                neptune = Planet("neptune",30.1*AU,0,neptune_radius, neptune_mass, BLUE,5.43*1000)
-                uranus = Planet("uranus",19.2*AU,0, uranus_radius, uranus_mass, WHITE, 6.71*1000)
+                mercury = Planet(0.387 * AU, 0, mercury_radius, mercury_mass,GREY,47.4 * 1000,"mercury")
+                earth = Planet(AU,0,earth_radius,earth_mass,BLUE,29.783*1000,"earth")
+                venus = Planet(0.723 * AU,0,venus_radius,venus_mass,ORANGE,35.02*1000,"venus")
+                mars = Planet(1.524 * AU,0,mars_radius,mars_mass,RED,24.077*1000,"mars")
+                jupiter = Planet(5.2*AU,0, jupiter_radius, jupiter_mass, ORANGE,13.72*1000,"jupiter")
+                saturn = Planet(9.5*AU,0, saturn_radius, saturn_mass, GREY,9.69*1000,"saturn")
+                uranus = Planet(19.2*AU,0, uranus_radius, uranus_mass, WHITE, 6.71*1000,"uranus")
+                neptune = Planet(30.1*AU,0,neptune_radius, neptune_mass, BLUE,5.43*1000,"neptune")
                 mouse_pos_scale = 1
                 bodies = [sun, earth, mars, venus, mercury, jupiter,saturn,uranus,neptune]
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -267,10 +288,6 @@ while running:
                 scale /= 1.25
                 move_camera_by /= 0.9
                 mouse_pos_scale *= 1.25
-            if event.button == 2:
-                x,y = pygame.mouse.get_pos()
-                x,y =((x-WIDTH/2)/250)*AU*mouse_pos_scale, ((y-HEIGHT/2)/250)*AU*mouse_pos_scale
-                bodies.append(Planet("",x,y,randint(5,20), randint(2*10**23, 3*10**24),(randint(0,255),randint(0,255),randint(0,255)), randint(8000,15000)))
             if event.button == 1:
                 x,y = pygame.mouse.get_pos()
                 x,y =((x-WIDTH/2)/250)*AU*mouse_pos_scale, ((y-HEIGHT/2)/250)*AU*mouse_pos_scale
@@ -281,3 +298,7 @@ while running:
                     else:
                         for body in bodies:
                             body.is_selected = False
+            if event.button == 3:
+                x,y = pygame.mouse.get_pos()
+                x,y =((x-WIDTH/2)/250)*AU*mouse_pos_scale, ((y-HEIGHT/2)/250)*AU*mouse_pos_scale
+                bodies.append(Planet(x,y,randint(5,20), randint(2*10**23, 3*10**24),(randint(0,255),randint(0,255),randint(0,255)), randint(8000,15000)))
